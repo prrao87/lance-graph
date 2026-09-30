@@ -105,12 +105,14 @@ jobs:
       - name: Test installed wheel without Rust
         shell: bash
         run: |
+          # Match the test-data writer to the Rust reader; constrain CI only.
           UV_BIN="$(command -v uv)"
           for version in 3.11 3.12; do
             environment="$RUNNER_TEMP/wheel-test-$version"
             "$UV_BIN" venv --python "$version" "$environment"
             PATH="$environment/bin:/usr/bin:/bin" "$UV_BIN" pip install \
-              --python "$environment/bin/python" --only-binary=:all: python/dist/*.whl
+              --python "$environment/bin/python" --only-binary=:all: \
+              python/dist/*.whl "pylance>=1.0.0,<2"
             PATH="$environment/bin:/usr/bin:/bin" "$environment/bin/python" \
               -I ci/check_wheel.py
           done

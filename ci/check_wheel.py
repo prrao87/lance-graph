@@ -7,9 +7,11 @@ import importlib.metadata
 import shutil
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pyarrow as pa
-from lance_graph import CypherQuery, GraphConfig, SqlQuery, _internal
+from lance import write_dataset
+from lance_graph import CypherQuery, DirNamespace, GraphConfig, SqlQuery, _internal
 
 
 def main():
@@ -28,15 +30,16 @@ def main():
         .with_relationship("KNOWS", "source", "target")
         .build()
     )
-    result = (
-        CypherQuery(
-            "MATCH (a:Person)-[:KNOWS]->(b:Person)-[:KNOWS]->(c:Person) "
-            "WHERE a.id = 1 RETURN b.name AS friend, c.name AS friend_of_friend"
-        )
-        .with_config(config)
-        .execute({"Person": people, "KNOWS": knows})
-    )
-    assert result.to_pylist() == [{"friend": "Bob", "friend_of_friend": "Carol"}]
+    query = CypherQuery(
+        "MATCH (a:Person)-[:KNOWS]->(b:Person)-[:KNOWS]->(c:Person) "
+        "WHERE a.id = 1 RETURN b.name AS friend, c.name AS friend_of_friend"
+    ).with_config(config)
+    expected = [{"friend": "Bob", "friend_of_friend": "Carol"}]
+    assert query.execute({"Person": people, "KNOWS": knows}).to_pylist() == expected
+    with TemporaryDirectory() as root:
+        write_dataset(people, Path(root) / "Person.lance")
+        write_dataset(knows, Path(root) / "KNOWS.lance")
+        assert query.execute_with_namespace(DirNamespace(root)).to_pylist() == expected
     assert SqlQuery("SELECT COUNT(*) AS count FROM people").execute(
         {"people": people}
     ).to_pylist() == [{"count": 3}]

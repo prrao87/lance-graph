@@ -28,10 +28,12 @@ wheel; check the selected release's files on PyPI. Rust and maturin are needed
 only when building from source.
 
 Release-workflow pull requests and manual `dry_run` builds produce downloadable
-workflow artifacts without publishing. Release runs publish the Linux distributions and the tested
-Apple Silicon wheel together after both builds succeed. The macOS wheel is tested
+workflow artifacts without publishing. Release runs publish the Linux distributions
+and the tested Apple Silicon wheel together after both builds succeed. The macOS wheel is tested
 in clean Python 3.11 and 3.12 environments with Rust absent from PATH, using actual
-Cypher traversal and SQL execution from the installed extension.
+in-memory and disk-backed Cypher traversal and SQL execution from the installed
+extension. CI uses a Lance 1.x test-data writer to match the embedded Rust reader;
+this test constraint does not change the package runtime requirements.
 
 ## Quick Start
 
